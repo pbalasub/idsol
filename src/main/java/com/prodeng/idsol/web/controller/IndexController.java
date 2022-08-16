@@ -1,5 +1,8 @@
 package com.prodeng.idsol.web.controller;
 
+import com.prodeng.idsol.dao.entity.EmployeeAddress;
+import com.prodeng.idsol.dao.mapper.EmployeeAddressMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,6 +19,9 @@ public class IndexController {
     @Value("${welcome.message}")
     private String message;
 
+    @Autowired
+    private EmployeeAddressMapper employeeAddressMapper;
+
     private List<String> tasks = Arrays.asList("a", "b", "c", "d", "e", "f", "g");
 
     @GetMapping("/")
@@ -23,6 +29,8 @@ public class IndexController {
         model.addAttribute("message", message);
         model.addAttribute("tasks", tasks);
 
+        EmployeeAddress employeeAddress = employeeAddressMapper.getEmployeeAddress("S00001");
+        System.out.println(employeeAddress.toString());
         return "index"; //view
     }
 
