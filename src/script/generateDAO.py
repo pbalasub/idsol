@@ -4,6 +4,7 @@ import os
 
 entity_package = "com.prodeng.idsol.dao.entity"
 mapper_package = "com.prodeng.idsol.dao.mapper"
+controller_package = "com.prodeng.idsol.web.controller"
 parent_dir = "/tmp"
 
 all_tables = []
@@ -113,6 +114,7 @@ def generate_daos():
         #table = "employeeaddress"
         generate_dao(table, get_table_metadata(table))
         generate_mapper(table, get_table_metadata(table))
+        generate_controller(table, get_table_metadata(table))
 
 
 def get_datatype(details):
@@ -183,6 +185,34 @@ def insertParams(tablemeta):
     return params
 
 
+def insertColsForInsertStmt(tablemeta):
+    cols = ""
+    for key in tablemeta:
+        if cols:
+            cols += ", "
+        cols += key
+    return cols
+
+
+def updateColsForStmt(tablemeta):
+    whereclause = ""
+    for key in tablemeta:
+        if tablemeta[key]['primary'] != 'PRI':
+            if (whereclause):
+                whereclause += ", "
+            whereclause += key + " = #{" + lowerFirstChar(key)+"}"
+    return whereclause
+
+
+def insertParamForInsertStmt(tablemeta):
+    whereclause = ""
+    for key in tablemeta:
+        if whereclause:
+            whereclause += ", "
+        whereclause += "#{" + lowerFirstChar(key)+"} "
+    return whereclause
+
+
 def generate_mapper(tablename, tablemeta):
     path = create_dir(parent_dir, "mapper")
     entity_clazz = capitalize(tablename)
@@ -203,17 +233,103 @@ def generate_mapper(tablename, tablemeta):
         # select all
         JFH.write("\t@Select (\"SELECT * FROM "+tablename+"\")\n")
         JFH.write("\tList<"+capitalize(entity_clazz) +
-                  "> getAll"+capitalize(entity_clazz)+"()\n")
+                  "> getAll"+capitalize(entity_clazz)+"();\n")
         JFH.write("\n")
         # select by Id
         JFH.write("\t@Select (\"SELECT * FROM "+tablename +
                   " WHERE " + insertWhereCls(tablemeta)+"\")\n")
         JFH.write("\t"+capitalize(entity_clazz) +
-                  " get"+capitalize(entity_clazz)+"(" + insertParams(tablemeta) + ")\n")
+                  " get"+capitalize(entity_clazz)+"(" + insertParams(tablemeta) + ");\n")
         JFH.write("\n")
         # insert
+        JFH.write("\t@Insert (\"INSERT INTO "+tablename + "(" + insertColsForInsertStmt(tablemeta) + ") "
+                  " VALUES (" + insertParamForInsertStmt(tablemeta) + ")\")\n")
+        JFH.write("\t"+capitalize(entity_clazz) +
+                  " save"+capitalize(entity_clazz)+"(" + entity_clazz + " " + lowerFirstChar(entity_clazz) + ");\n")
+        JFH.write("\n")
         # update
+        JFH.write("\t@Update (\"UPDATE  "+tablename +
+                  " SET " + updateColsForStmt(tablemeta)+" WHERE " + insertWhereCls(tablemeta)+"\")\n")
+        JFH.write("\t"+capitalize(entity_clazz) +
+                  " update"+capitalize(entity_clazz)+"(" + insertParams(tablemeta) + ");\n")
+        JFH.write("\n")
         # delete
+        JFH.write("\t@Delete (\"DELETE * FROM "+tablename +
+                  " WHERE " + insertWhereCls(tablemeta)+"\")\n")
+        JFH.write("\t"+capitalize(entity_clazz) +
+                  " delete"+capitalize(entity_clazz)+"(" + insertParams(tablemeta) + ");\n")
+        JFH.write("\n")
+        JFH.write("}\n")
+
+
+def generate_controller(tablename, tablemeta):
+    path = create_dir(parent_dir, "controller")
+    entity_clazz = capitalize(tablename)
+    mapper_clazz = capitalize(tablename) + "Mapper"
+    clazz = capitalize(tablename) + "Controller"
+    print("Generate Controller for " + clazz)
+    # Generate Mapper
+    filename = path + "/" + clazz+".java"
+    with open(filename, "w") as JFH:
+        JFH.write("package " + controller_package + ";")
+        JFH.write("\n")
+        JFH.write("\n")
+        JFH.write("import " + entity_package + "." + entity_clazz + ";\n")
+        JFH.write("import " + mapper_package + "." + mapper_clazz + ";\n")
+        JFH.write("import java.util.List;\n")
+        JFH.write("\n")
+        JFH.write("import lombok.extern.slf4j.Slf4j;\n")
+        JFH.write(
+            "import org.springframework.beans.factory.annotation.Autowired;\n")
+        JFH.write("import org.springframework.web.bind.annotation.*;\n")
+
+        JFH.write("import java.util.List;\n\n")
+
+        JFH.write("@RestController\n")
+        JFH.write("@RequestMapping(\"/api/"+lowerFirstChar(tablename) + "\")\n")
+        JFH.write("@Slf4j\n")
+        JFH.write("public class " + clazz + "{\n\n")
+        JFH.write("\t@Autowired\n")
+        JFH.write("\tprivate " + mapper_clazz + " " +
+                  lowerFirstChar(mapper_clazz) + ";\n\n")
+
+        JFH.write("\t@GetMapping(\"/\")\n")
+        JFH.write("\tpublic List<"+entity_clazz + "> getAll" +
+                  lowerFirstChar(entity_clazz) + "() {\n")
+        JFH.write("\t\tList<"+entity_clazz+"> " + lowerFirstChar(entity_clazz) + "s" +
+                  " = " + lowerFirstChar(mapper_clazz) + ".getAll" + entity_clazz + "();\n")
+        JFH.write("\t\treturn " + lowerFirstChar(entity_clazz) + "s" + ";\n")
+        JFH.write("\t}\n")
+
+        # @GetMapping("/{id}")
+        # public EmployeeAddress getEmployeeAddressById(@PathVariable(value = "id") String id) {
+        #     EmployeeAddress employeeAddress = employeeAddressMapper.getEmployeeAddress(id);
+        #     log.debug(employeeAddress.toString());
+        #     return employeeAddress;
+        # }
+
+        JFH.write("\t@PostMapping(\"/save\")\n")
+        JFH.write("\tpublic void save" + entity_clazz + "(@RequestBody " +
+                  entity_clazz + " " + lowerFirstChar(entity_clazz) + "){\n")
+        JFH.write("\t\t" + lowerFirstChar(mapper_clazz) + ".save" +
+                  entity_clazz + "("+lowerFirstChar(entity_clazz) + ");\n")
+        JFH.write(
+            "\t\tlog.debug(" + lowerFirstChar(entity_clazz) + ".toString());\n")
+        JFH.write("\t}\n")
+
+        # @PutMapping("/update/{id}")
+        # public void updateEmployeeAddress(@PathVariable(value = "id") String id, @RequestBody EmployeeAddress employeeAddress ){
+        #     employeeAddressMapper.updateEmployeeAddress(employeeAddress);
+        #     log.debug(employeeAddress.toString());
+        # }
+
+        # @DeleteMapping("/delete/{id}")
+        # public void deleteEmployeeAddressw(@PathVariable(value = "id") String id) {
+        #     log.debug("Delete EmployeeAddress: " + id);
+        #     employeeAddressMapper.deleteEmployeeAddress(id);
+        # }
+
+        JFH.write("\n")
         JFH.write("}\n")
 
 
