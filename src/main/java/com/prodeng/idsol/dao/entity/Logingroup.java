@@ -1,5 +1,6 @@
 package com.prodeng.idsol.dao.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class Logingroup{
 	private String groupName;
 	private String lastUpdatedBy;
 	private Date lastUpdatedDate;
+	@JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "HH:mm:ss[.SSS][.SS][.S]")
 	private LocalTime lastUpdatedTime;
 
 }

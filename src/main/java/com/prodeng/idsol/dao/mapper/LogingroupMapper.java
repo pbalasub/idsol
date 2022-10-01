@@ -13,7 +13,7 @@ public interface LogingroupMapper{
 	Logingroup getLogingroup(@Param("groupCode") String groupCode);
 
 	@Insert ("INSERT INTO logingroup(GroupCode, GroupName, LastUpdatedBy, LastUpdatedDate, LastUpdatedTime)  VALUES (#{groupCode} , #{groupName} , #{lastUpdatedBy} , #{lastUpdatedDate} , #{lastUpdatedTime} )")
-	Logingroup saveLogingroup(Logingroup logingroup);
+	void saveLogingroup(Logingroup logingroup);
 
 	@Update ("UPDATE  logingroup SET GroupName = #{groupName}, LastUpdatedBy = #{lastUpdatedBy}, LastUpdatedDate = #{lastUpdatedDate}, LastUpdatedTime = #{lastUpdatedTime} WHERE GroupCode = #{groupCode} ")
 	Logingroup updateLogingroup(@Param("groupCode") String groupCode);

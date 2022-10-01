@@ -174,6 +174,45 @@ def insertWhereCls(tablemeta):
     return whereclause
 
 
+def generategetMappingCtrlUrl(mapping, tablemeta):
+    getmappingclause = "@"+mapping+"(\""
+
+    if mapping == "PutMapping":
+        getmappingclause += "/update"
+    elif mapping == "DeleteMapping":
+        getmappingclause += "/delete"
+
+    for key in tablemeta:
+        if tablemeta[key]['primary'] == 'PRI':
+            if (getmappingclause):
+                getmappingclause += "/"
+            getmappingclause += "{" + lowerFirstChar(key) + "}"
+    getmappingclause += "\")"
+    return getmappingclause
+
+
+def generategetMappingParams(tablemeta):
+    getmappingclause = ""
+    for key in tablemeta:
+        if tablemeta[key]['primary'] == 'PRI':
+            if (getmappingclause):
+                getmappingclause += ", "
+            getmappingclause += "@PathVariable(value = \"" + \
+                lowerFirstChar(
+                    key) + "\") " + get_datatype(tablemeta[key]) + " " + lowerFirstChar(key)
+    return getmappingclause
+
+
+def generategetterParams(tablemeta):
+    getmappingclause = ""
+    for key in tablemeta:
+        if tablemeta[key]['primary'] == 'PRI':
+            if (getmappingclause):
+                getmappingclause += ","
+            getmappingclause += lowerFirstChar(key)
+    return getmappingclause
+
+
 def insertParams(tablemeta):
     params = ""
     for key in tablemeta:
@@ -244,19 +283,19 @@ def generate_mapper(tablename, tablemeta):
         # insert
         JFH.write("\t@Insert (\"INSERT INTO "+tablename + "(" + insertColsForInsertStmt(tablemeta) + ") "
                   " VALUES (" + insertParamForInsertStmt(tablemeta) + ")\")\n")
-        JFH.write("\t"+capitalize(entity_clazz) +
+        JFH.write("\tvoid " +
                   " save"+capitalize(entity_clazz)+"(" + entity_clazz + " " + lowerFirstChar(entity_clazz) + ");\n")
         JFH.write("\n")
         # update
         JFH.write("\t@Update (\"UPDATE  "+tablename +
                   " SET " + updateColsForStmt(tablemeta)+" WHERE " + insertWhereCls(tablemeta)+"\")\n")
-        JFH.write("\t"+capitalize(entity_clazz) +
+        JFH.write("\tvoid " +
                   " update"+capitalize(entity_clazz)+"(" + insertParams(tablemeta) + ");\n")
         JFH.write("\n")
         # delete
-        JFH.write("\t@Delete (\"DELETE * FROM "+tablename +
+        JFH.write("\t@Delete (\"DELETE FROM "+tablename +
                   " WHERE " + insertWhereCls(tablemeta)+"\")\n")
-        JFH.write("\t"+capitalize(entity_clazz) +
+        JFH.write("\tvoid " +
                   " delete"+capitalize(entity_clazz)+"(" + insertParams(tablemeta) + ");\n")
         JFH.write("\n")
         JFH.write("}\n")
@@ -281,9 +320,7 @@ def generate_controller(tablename, tablemeta):
         JFH.write("import lombok.extern.slf4j.Slf4j;\n")
         JFH.write(
             "import org.springframework.beans.factory.annotation.Autowired;\n")
-        JFH.write("import org.springframework.web.bind.annotation.*;\n")
-
-        JFH.write("import java.util.List;\n\n")
+        JFH.write("import org.springframework.web.bind.annotation.*;\n\n")
 
         JFH.write("@RestController\n")
         JFH.write("@RequestMapping(\"/api/"+lowerFirstChar(tablename) + "\")\n")
@@ -295,18 +332,30 @@ def generate_controller(tablename, tablemeta):
 
         JFH.write("\t@GetMapping(\"/\")\n")
         JFH.write("\tpublic List<"+entity_clazz + "> getAll" +
-                  lowerFirstChar(entity_clazz) + "() {\n")
+                  entity_clazz + "() {\n")
         JFH.write("\t\tList<"+entity_clazz+"> " + lowerFirstChar(entity_clazz) + "s" +
                   " = " + lowerFirstChar(mapper_clazz) + ".getAll" + entity_clazz + "();\n")
         JFH.write("\t\treturn " + lowerFirstChar(entity_clazz) + "s" + ";\n")
-        JFH.write("\t}\n")
+        JFH.write("\t}\n\n")
 
-        # @GetMapping("/{id}")
-        # public EmployeeAddress getEmployeeAddressById(@PathVariable(value = "id") String id) {
-        #     EmployeeAddress employeeAddress = employeeAddressMapper.getEmployeeAddress(id);
-        #     log.debug(employeeAddress.toString());
-        #     return employeeAddress;
-        # }
+        JFH.write("\t"+generategetMappingCtrlUrl("GetMapping", tablemeta)+"\n")
+        JFH.write("\tpublic " + entity_clazz +
+                  " get" + entity_clazz + "(" + generategetMappingParams(tablemeta) + ") {\n")
+        JFH.write("\t\t" + entity_clazz + " " + lowerFirstChar(entity_clazz) + " = " +
+                  lowerFirstChar(mapper_clazz) + ".get" + entity_clazz + "(" + generategetterParams(tablemeta)+");\n")
+        JFH.write(
+            "\t\tlog.debug(" + lowerFirstChar(entity_clazz) + ".toString());\n")
+        JFH.write("\t\treturn " + lowerFirstChar(entity_clazz) + ";\n")
+        JFH.write("\t}\n\n")
+
+        JFH.write("\t@PutMapping(\"/update\")\n")
+        JFH.write("\tpublic void " +
+                  " update" + entity_clazz + "(@RequestBody " + entity_clazz + " " + lowerFirstChar(entity_clazz)+") {\n")
+        JFH.write("\t\t" + lowerFirstChar(mapper_clazz) + ".update" +
+                  entity_clazz + "(" + lowerFirstChar(entity_clazz) + ");\n")
+        JFH.write(
+            "\t\tlog.debug(" + lowerFirstChar(entity_clazz) + ".toString());\n")
+        JFH.write("\t}\n\n")
 
         JFH.write("\t@PostMapping(\"/save\")\n")
         JFH.write("\tpublic void save" + entity_clazz + "(@RequestBody " +
@@ -315,19 +364,14 @@ def generate_controller(tablename, tablemeta):
                   entity_clazz + "("+lowerFirstChar(entity_clazz) + ");\n")
         JFH.write(
             "\t\tlog.debug(" + lowerFirstChar(entity_clazz) + ".toString());\n")
-        JFH.write("\t}\n")
+        JFH.write("\t}\n\n")
 
-        # @PutMapping("/update/{id}")
-        # public void updateEmployeeAddress(@PathVariable(value = "id") String id, @RequestBody EmployeeAddress employeeAddress ){
-        #     employeeAddressMapper.updateEmployeeAddress(employeeAddress);
-        #     log.debug(employeeAddress.toString());
-        # }
-
-        # @DeleteMapping("/delete/{id}")
-        # public void deleteEmployeeAddressw(@PathVariable(value = "id") String id) {
-        #     log.debug("Delete EmployeeAddress: " + id);
-        #     employeeAddressMapper.deleteEmployeeAddress(id);
-        # }
+        JFH.write("\t"+generategetMappingCtrlUrl("DeleteMapping", tablemeta)+"\n")
+        JFH.write("\tpublic void " +
+                  " delete" + entity_clazz + "(" + generategetMappingParams(tablemeta) + ") {\n")
+        JFH.write("\t\t" + lowerFirstChar(mapper_clazz) + ".delete" +
+                  entity_clazz + "(" + generategetterParams(tablemeta)+");\n")
+        JFH.write("\t}\n\n")
 
         JFH.write("\n")
         JFH.write("}\n")
