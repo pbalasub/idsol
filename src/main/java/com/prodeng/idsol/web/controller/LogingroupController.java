@@ -7,7 +7,6 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/logingroup")
@@ -18,9 +17,22 @@ public class LogingroupController{
 	private LogingroupMapper logingroupMapper;
 
 	@GetMapping("/")
-	public List<Logingroup> getAlllogingroup() {
+	public List<Logingroup> getAllLogingroup() {
 		List<Logingroup> logingroups = logingroupMapper.getAllLogingroup();
 		return logingroups;
+	}
+
+	@GetMapping("/{groupCode}")
+	public Logingroup getLogingroup(@PathVariable(value = "groupCode") String groupCode) {
+		Logingroup logingroup = logingroupMapper.getLogingroup(groupCode);
+		log.debug(logingroup.toString());
+		return logingroup;
+	}
+
+	@PutMapping("/update")
+	public void  updateLogingroup(@RequestBody Logingroup logingroup) {
+		logingroupMapper.updateLogingroup(String.valueOf(logingroup));
+		log.debug(logingroup.toString());
 	}
 
 	@PostMapping("/save")
@@ -28,5 +40,11 @@ public class LogingroupController{
 		logingroupMapper.saveLogingroup(logingroup);
 		log.debug(logingroup.toString());
 	}
+
+	@DeleteMapping("/delete/{groupCode}")
+	public void  deleteLogingroup(@PathVariable(value = "groupCode") String groupCode) {
+		logingroupMapper.deleteLogingroup(groupCode);
+	}
+
 
 }

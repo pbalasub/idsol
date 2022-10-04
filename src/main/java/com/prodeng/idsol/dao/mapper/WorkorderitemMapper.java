@@ -16,9 +16,10 @@ public interface WorkorderitemMapper{
 	void  saveWorkorderitem(Workorderitem workorderitem);
 
 	@Update ("UPDATE  workorderitem SET ItemCode = #{itemCode}, SpecialChar1 = #{specialChar1}, SpecialChar2 = #{specialChar2}, SpecialChar3 = #{specialChar3}, SpecialChar4 = #{specialChar4}, SpecialChar5 = #{specialChar5}, WOQtyInNos = #{wOQtyInNos}, WOWeight = #{wOWeight}, WOCompQtyInNos = #{wOCompQtyInNos}, WOCompWeight = #{wOCompWeight}, OFNo = #{oFNo}, OFAccQtyInNos = #{oFAccQtyInNos}, OFAccWeight = #{oFAccWeight}, ClosureStatus = #{closureStatus}, WODeliveryDate = #{wODeliveryDate} WHERE WOId = #{wOId} AND SerialNo = #{serialNo} ")
-	void updateWorkorderitem(Workorderitem workorderitem);
+	void  updateWorkorderitem(@Param("wOId") Integer wOId, @Param("serialNo") Integer serialNo);
 
 	@Delete ("DELETE FROM workorderitem WHERE WOId = #{wOId} AND SerialNo = #{serialNo} ")
-	void deleteWorkorderitem(@Param("wOId") Integer wOId, @Param("serialNo") Integer serialNo);
+	void  deleteWorkorderitem(@Param("wOId") Integer wOId, @Param("serialNo") Integer serialNo);
 
+    void updateWorkorderitem(Workorderitem workorderitem);
 }

@@ -13,12 +13,12 @@ public interface LogingroupMapper{
 	Logingroup getLogingroup(@Param("groupCode") String groupCode);
 
 	@Insert ("INSERT INTO logingroup(GroupCode, GroupName, LastUpdatedBy, LastUpdatedDate, LastUpdatedTime)  VALUES (#{groupCode} , #{groupName} , #{lastUpdatedBy} , #{lastUpdatedDate} , #{lastUpdatedTime} )")
-	void saveLogingroup(Logingroup logingroup);
+	void  saveLogingroup(Logingroup logingroup);
 
 	@Update ("UPDATE  logingroup SET GroupName = #{groupName}, LastUpdatedBy = #{lastUpdatedBy}, LastUpdatedDate = #{lastUpdatedDate}, LastUpdatedTime = #{lastUpdatedTime} WHERE GroupCode = #{groupCode} ")
-	Logingroup updateLogingroup(@Param("groupCode") String groupCode);
+	void  updateLogingroup(@Param("groupCode") String groupCode);
 
-	@Delete ("DELETE * FROM logingroup WHERE GroupCode = #{groupCode} ")
-	Logingroup deleteLogingroup(@Param("groupCode") String groupCode);
+	@Delete ("DELETE FROM logingroup WHERE GroupCode = #{groupCode} ")
+	void  deleteLogingroup(@Param("groupCode") String groupCode);
 
 }
